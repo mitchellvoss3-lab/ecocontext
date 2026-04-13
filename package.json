@@ -1,0 +1,30 @@
+{
+  "name": "ecocontext",
+  "version": "0.1.0",
+  "description": "Smart context compilation for AI — small models, big results, less carbon.",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node --env-file=.env dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": ["ai", "context", "anthropic", "claude", "efficiency", "carbon"],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
+    "better-sqlite3": "^11.9.1",
+    "express": "^4.21.2",
+    "uuid": "^11.1.0",
+    "zero-context-first": "file:./zero-context-first"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}
