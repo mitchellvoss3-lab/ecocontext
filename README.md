@@ -94,6 +94,8 @@ cp .env.example .env
 
 **Option 1: Using Ollama (free, no account needed)**
 
+During onboarding, choose Ollama and click Auto-install & setup to let EcoContext install/start Ollama (macOS with Homebrew) and pull the default model automatically.
+
 ```bash
 # Install Ollama from ollama.com
 # Pull a small model

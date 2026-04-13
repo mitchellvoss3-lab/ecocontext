@@ -16,6 +16,7 @@ import { getStats } from './api/stats.js';
 import { getFeedbackStats, submitFeedback } from './api/feedback.js';
 import { getConversationMessages, getConversations, searchConversations } from './api/conversations.js';
 import { runBenchmark } from './api/benchmark.js';
+import { getOllamaStatus, setupOllama } from './api/ollama.js';
 import { handleOnboardingStatus, handleOnboardingComplete, handleOnboardingReset } from './store/seed.js';
 import { getProvider, detectProvider, listProviders } from './engine/provider.js';
 
@@ -80,6 +81,10 @@ export function createServer(): express.Express {
       available: listProviders(),
     });
   });
+
+  // --- Ollama local setup ---
+  app.get('/api/ollama/status', getOllamaStatus);
+  app.post('/api/ollama/setup', setupOllama);
 
   return app;
 }

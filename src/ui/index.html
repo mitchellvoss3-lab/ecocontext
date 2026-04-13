@@ -639,6 +639,13 @@
       <h2>API Key</h2>
       <p id="ob-key-hint">Paste your API key below.</p>
       <p id="ob-provider-selected" style="font-size:12px; color:var(--accent);">Selected provider: Gemini</p>
+      <div id="ob-ollama-tools" class="hidden" style="margin-top:10px; margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--input-bg);">
+        <p id="ob-ollama-status" style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0;">Ollama status: checking...</p>
+        <div style="display:flex; gap:8px;">
+          <button id="ob-ollama-setup-btn" onclick="setupOllamaAuto()" style="margin-top:0; flex:1; padding:8px; background:var(--accent); color:#fff; border:none; border-radius:6px; cursor:pointer;">Auto-install & setup</button>
+          <button onclick="checkOllamaStatus()" style="margin-top:0; flex:1; padding:8px; background:var(--surface); color:var(--text-muted); border:1px solid var(--border); border-radius:6px; cursor:pointer;">Check status</button>
+        </div>
+      </div>
       <input id="ob-api-key" type="password" placeholder="Paste API key here" style="margin-top:12px;">
       <div style="display:flex; gap:8px; margin-top:16px;">
         <button onclick="goToStep(1)" style="flex:1; padding:10px; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:var(--text-muted); cursor:pointer;">Back</button>
@@ -930,10 +937,14 @@
       selectedProvider = name;
       const selectedLabel = name.charAt(0).toUpperCase() + name.slice(1);
       document.getElementById('ob-provider-selected').textContent = `Selected provider: ${selectedLabel}`;
+      const toolsEl = document.getElementById('ob-ollama-tools');
+      const keyInputEl = document.getElementById('ob-api-key');
       clearOnboardingFeedback();
       document.getElementById('ob-key-hint').textContent = name === 'ollama'
         ? 'Ollama runs locally and does not require an API key. Click Next to continue.'
         : (keyHints[name] ?? 'Paste your API key below.');
+      toolsEl.classList.toggle('hidden', name !== 'ollama');
+      keyInputEl.classList.toggle('hidden', name === 'ollama');
       goToStep(2);
       setOnboardingFeedback(
         name === 'ollama'
@@ -941,6 +952,63 @@
           : `Provider selected: ${selectedLabel}. Paste your key, then click Next.`,
         'info'
       );
+      if (name === 'ollama') {
+        checkOllamaStatus();
+      }
+    }
+
+    async function checkOllamaStatus() {
+      const statusEl = document.getElementById('ob-ollama-status');
+      statusEl.textContent = 'Ollama status: checking...';
+      try {
+        const res = await fetch('/api/ollama/status');
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Could not check Ollama status.');
+        }
+        const hasModel = Array.isArray(data.models) && data.models.some(m => String(m).startsWith('llama3.2:3b'));
+        statusEl.textContent = data.installed
+          ? (data.running
+              ? (hasModel ? 'Ollama is installed, running, and llama3.2:3b is ready.' : 'Ollama is installed and running, but the default model is not pulled yet.')
+              : 'Ollama is installed but not running.')
+          : 'Ollama is not installed.';
+      } catch (err) {
+        statusEl.textContent = `Ollama status check failed: ${err.message}`;
+      }
+    }
+
+    async function setupOllamaAuto() {
+      const btn = document.getElementById('ob-ollama-setup-btn');
+      const statusEl = document.getElementById('ob-ollama-status');
+      btn.disabled = true;
+      btn.textContent = 'Setting up...';
+      statusEl.textContent = 'Running automatic Ollama setup...';
+
+      try {
+        const res = await fetch('/api/ollama/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            autoInstall: true,
+            startService: true,
+            pullModel: 'llama3.2:3b',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Automatic setup failed.');
+        }
+
+        statusEl.textContent = 'Ollama setup complete. Default model is ready.';
+        setOnboardingFeedback('Ollama is ready. You can click Next.', 'success');
+      } catch (err) {
+        statusEl.textContent = `Setup failed: ${err.message}`;
+        setOnboardingFeedback(`Ollama setup failed: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Auto-install & setup';
+        checkOllamaStatus();
+      }
     }
 
     function goToStep(n) {
