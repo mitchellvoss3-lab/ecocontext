@@ -35,10 +35,14 @@ function getStoredPreference(key: string): string | undefined {
 }
 
 function getApiKeyForProvider(provider: 'anthropic' | 'openai' | 'gemini'): string {
-  const stored = getStoredPreference('llm_api_key') ?? '';
-  if (provider === 'anthropic') return process.env.ANTHROPIC_API_KEY ?? stored;
-  if (provider === 'openai') return process.env.OPENAI_API_KEY ?? stored;
-  return process.env.GEMINI_API_KEY ?? stored;
+  const legacyStored = getStoredPreference('llm_api_key') ?? '';
+  const anthropicStored = getStoredPreference('anthropic_api_key') ?? legacyStored;
+  const openaiStored = getStoredPreference('openai_api_key') ?? legacyStored;
+  const geminiStored = getStoredPreference('gemini_api_key') ?? legacyStored;
+
+  if (provider === 'anthropic') return process.env.ANTHROPIC_API_KEY ?? anthropicStored;
+  if (provider === 'openai') return process.env.OPENAI_API_KEY ?? openaiStored;
+  return process.env.GEMINI_API_KEY ?? geminiStored;
 }
 
 // --- Anthropic ---
@@ -179,7 +183,7 @@ export class GeminiProvider implements LLMProvider {
 
   async chat(params: Parameters<LLMProvider['chat']>[0]): Promise<LLMResponse> {
     if (!this.apiKey) {
-      throw new Error('Gemini API key missing. Reset Provider Setup in Settings and enter a valid Gemini key.');
+      throw new Error('Gemini API key missing. Reset Provider Setup in Settings and enter a valid key from Google AI Studio (typically starts with AIza).');
     }
 
     // System instruction goes as a separate field

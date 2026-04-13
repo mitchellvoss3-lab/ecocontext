@@ -881,10 +881,35 @@
     let currentOnboardingStep = 1;
 
     const keyHints = {
-      gemini: 'Get a free key at aistudio.google.com → "Get API key"',
+      gemini: 'Get a free key at aistudio.google.com → "Get API key" (looks like AIza...)',
       openai: 'Get a key at platform.openai.com/api-keys',
       anthropic: 'Get a key at console.anthropic.com/settings/keys',
     };
+
+    function validateProviderApiKey(provider, key) {
+      if (provider === 'gemini') {
+        if (/^projects\//i.test(key)) {
+          return 'That looks like a Google project id, not a Gemini API key. Use AI Studio -> Get API key.';
+        }
+        if (!/^AIza[0-9A-Za-z_-]{20,}$/.test(key)) {
+          return 'Gemini key format looks invalid. It should usually start with AIza...';
+        }
+        return '';
+      }
+      if (provider === 'openai') {
+        if (!/^sk-[A-Za-z0-9_-]{16,}$/.test(key)) {
+          return 'OpenAI key format looks invalid. It should start with sk-';
+        }
+        return '';
+      }
+      if (provider === 'anthropic') {
+        if (!/^sk-ant-[A-Za-z0-9_-]{12,}$/.test(key)) {
+          return 'Anthropic key format looks invalid. It should start with sk-ant-';
+        }
+        return '';
+      }
+      return '';
+    }
 
     async function checkOnboarding() {
       try {
@@ -1040,6 +1065,11 @@
       }
       if (key.length < 12) {
         setOnboardingFeedback('That key looks too short. Please double-check and try again.', 'error');
+        return;
+      }
+      const formatError = validateProviderApiKey(selectedProvider, key);
+      if (formatError) {
+        setOnboardingFeedback(formatError, 'error');
         return;
       }
       setOnboardingFeedback('API key accepted. Moving to profile step.', 'success');
